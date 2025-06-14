@@ -9,23 +9,18 @@ import { Badge } from '@/components/ui/badge';
 import { BookOpen, Clock, Users, Award, Play, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
+// Usando tipos mais simples baseados no schema atual do Supabase
 interface Course {
   id: string;
   title: string;
-  description: string;
-  instructor: string;
-  duration_hours: number;
-  level: string;
-  category: string;
-  thumbnail_url: string;
-  is_published: boolean;
-}
-
-interface Enrollment {
-  id: string;
-  progress: number;
-  status: string;
-  course: Course;
+  description: string | null;
+  duration_hours: number | null;
+  level: string | null;
+  price: number | null;
+  thumbnail_url: string | null;
+  is_published: boolean | null;
+  created_at: string;
+  updated_at: string;
 }
 
 const AcademyDashboard = () => {
@@ -33,7 +28,6 @@ const AcademyDashboard = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [courses, setCourses] = useState<Course[]>([]);
-  const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   useEffect(() => {
@@ -49,6 +43,8 @@ const AcademyDashboard = () => {
 
   const fetchData = async () => {
     try {
+      console.log('Buscando cursos...');
+      
       // Buscar cursos disponíveis
       const { data: coursesData, error: coursesError } = await supabase
         .from('courses')
@@ -56,23 +52,16 @@ const AcademyDashboard = () => {
         .eq('is_published', true)
         .order('created_at', { ascending: false });
 
-      if (coursesError) throw coursesError;
+      if (coursesError) {
+        console.error('Erro ao buscar cursos:', coursesError);
+        throw coursesError;
+      }
+      
+      console.log('Cursos encontrados:', coursesData);
       setCourses(coursesData || []);
 
-      // Buscar matrículas do usuário
-      const { data: enrollmentsData, error: enrollmentsError } = await supabase
-        .from('enrollments')
-        .select(`
-          *,
-          course:courses(*)
-        `)
-        .eq('user_id', user?.id)
-        .eq('status', 'active');
-
-      if (enrollmentsError) throw enrollmentsError;
-      setEnrollments(enrollmentsData || []);
-
     } catch (error: any) {
+      console.error('Erro completo:', error);
       toast({
         title: "Erro ao carregar dados",
         description: error.message,
@@ -80,33 +69,6 @@ const AcademyDashboard = () => {
       });
     } finally {
       setLoadingData(false);
-    }
-  };
-
-  const handleEnroll = async (courseId: string) => {
-    try {
-      const { error } = await supabase
-        .from('enrollments')
-        .insert({
-          user_id: user?.id,
-          course_id: courseId,
-          status: 'active'
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Matrícula realizada!",
-        description: "Você foi matriculado no curso com sucesso."
-      });
-
-      fetchData(); // Recarregar dados
-    } catch (error: any) {
-      toast({
-        title: "Erro na matrícula",
-        description: error.message,
-        variant: "destructive"
-      });
     }
   };
 
@@ -125,9 +87,6 @@ const AcademyDashboard = () => {
       </div>
     );
   }
-
-  const enrolledCourseIds = enrollments.map(e => e.course.id);
-  const availableCourses = courses.filter(course => !enrolledCourseIds.includes(course.id));
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -157,8 +116,8 @@ const AcademyDashboard = () => {
             <CardContent className="flex items-center p-6">
               <BookOpen className="h-8 w-8 text-blue-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Cursos Matriculados</p>
-                <p className="text-2xl font-bold">{enrollments.length}</p>
+                <p className="text-sm font-medium text-gray-600">Cursos Disponíveis</p>
+                <p className="text-2xl font-bold">{courses.length}</p>
               </div>
             </CardContent>
           </Card>
@@ -167,9 +126,9 @@ const AcademyDashboard = () => {
             <CardContent className="flex items-center p-6">
               <Clock className="h-8 w-8 text-green-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Horas de Estudo</p>
+                <p className="text-sm font-medium text-gray-600">Horas de Conteúdo</p>
                 <p className="text-2xl font-bold">
-                  {enrollments.reduce((total, e) => total + (e.course.duration_hours || 0), 0)}h
+                  {courses.reduce((total, course) => total + (course.duration_hours || 0), 0)}h
                 </p>
               </div>
             </CardContent>
@@ -179,8 +138,8 @@ const AcademyDashboard = () => {
             <CardContent className="flex items-center p-6">
               <Users className="h-8 w-8 text-purple-600" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Cursos Disponíveis</p>
-                <p className="text-2xl font-bold">{courses.length}</p>
+                <p className="text-sm font-medium text-gray-600">Matriculado</p>
+                <p className="text-2xl font-bold">0</p>
               </div>
             </CardContent>
           </Card>
@@ -190,92 +149,52 @@ const AcademyDashboard = () => {
               <Award className="h-8 w-8 text-yellow-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Certificados</p>
-                <p className="text-2xl font-bold">
-                  {enrollments.filter(e => e.progress === 100).length}
-                </p>
+                <p className="text-2xl font-bold">0</p>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Meus Cursos */}
-        {enrollments.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Meus Cursos</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {enrollments.map((enrollment) => (
-                <Card key={enrollment.id} className="hover:shadow-lg transition-shadow">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <Badge variant={enrollment.progress === 100 ? "default" : "secondary"}>
-                        {enrollment.progress}% Concluído
-                      </Badge>
-                      <Badge variant="outline">{enrollment.course.level}</Badge>
-                    </div>
-                    <CardTitle className="text-lg">{enrollment.course.title}</CardTitle>
-                    <CardDescription>{enrollment.course.instructor}</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                      {enrollment.course.description}
-                    </p>
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">
-                        {enrollment.course.duration_hours}h de conteúdo
-                      </span>
-                      <Button size="sm">
-                        <Play className="w-4 h-4 mr-2" />
-                        Continuar
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Cursos Disponíveis */}
-        {availableCourses.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Cursos Disponíveis</h2>
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Cursos Disponíveis</h2>
+          {courses.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {availableCourses.map((course) => (
+              {courses.map((course) => (
                 <Card key={course.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex justify-between items-start">
-                      <Badge variant="outline">{course.category}</Badge>
-                      <Badge variant="secondary">{course.level}</Badge>
+                      <Badge variant="outline">Teologia</Badge>
+                      <Badge variant="secondary">{course.level || 'Iniciante'}</Badge>
                     </div>
                     <CardTitle className="text-lg">{course.title}</CardTitle>
-                    <CardDescription>{course.instructor}</CardDescription>
+                    <CardDescription>Professor CIMEB</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                      {course.description}
+                      {course.description || 'Descrição do curso em breve.'}
                     </p>
                     <div className="flex justify-between items-center">
                       <span className="text-sm text-gray-500">
-                        {course.duration_hours}h de conteúdo
+                        {course.duration_hours || 0}h de conteúdo
                       </span>
-                      <Button size="sm" onClick={() => handleEnroll(course.id)}>
-                        Matricular-se
+                      <Button size="sm">
+                        <Play className="w-4 h-4 mr-2" />
+                        Ver Curso
                       </Button>
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-          </div>
-        )}
-
-        {courses.length === 0 && (
-          <div className="text-center py-12">
-            <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum curso disponível</h3>
-            <p className="text-gray-500">Novos cursos serão adicionados em breve!</p>
-          </div>
-        )}
+          ) : (
+            <div className="text-center py-12">
+              <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum curso disponível</h3>
+              <p className="text-gray-500">Novos cursos serão adicionados em breve!</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
