@@ -1,6 +1,10 @@
+
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const Services = () => {
+  const navigate = useNavigate();
+
   const services = [
     {
       id: 'academy',
@@ -13,7 +17,8 @@ const Services = () => {
         'Mentoria Ministerial'
       ],
       gradient: 'from-blue-600 to-blue-700',
-      icon: '🎓'
+      icon: '🎓',
+      action: () => navigate('/academy')
     },
     {
       id: 'livraria',
@@ -26,7 +31,8 @@ const Services = () => {
         'Downloads Ilimitados'
       ],
       gradient: 'from-green-600 to-green-700',
-      icon: '📚'
+      icon: '📚',
+      action: () => {}
     },
     {
       id: 'loja',
@@ -39,7 +45,8 @@ const Services = () => {
         'Entrega Nacional'
       ],
       gradient: 'from-purple-600 to-purple-700',
-      icon: '🛍️'
+      icon: '🛍️',
+      action: () => {}
     }
   ];
 
@@ -85,9 +92,10 @@ const Services = () => {
                 </ul>
 
                 <Button 
+                  onClick={service.action}
                   className={`w-full bg-gradient-to-r ${service.gradient} hover:opacity-90 text-white py-3 rounded-lg font-semibold transition-all duration-300`}
                 >
-                  Explorar {service.title}
+                  {service.id === 'academy' ? 'Acessar Academy' : `Explorar ${service.title}`}
                 </Button>
               </div>
 
@@ -107,7 +115,10 @@ const Services = () => {
               Junte-se a centenas de ministros que já fazem parte da família CIMEB 
               e tenha acesso a todos os nossos recursos exclusivos.
             </p>
-            <Button className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 px-8 py-4 text-lg font-bold rounded-lg transition-all duration-300 transform hover:scale-105">
+            <Button 
+              onClick={() => navigate('/academy')}
+              className="bg-yellow-400 hover:bg-yellow-500 text-blue-900 px-8 py-4 text-lg font-bold rounded-lg transition-all duration-300 transform hover:scale-105"
+            >
               QUERO ME ASSOCIAR AGORA
             </Button>
           </div>
