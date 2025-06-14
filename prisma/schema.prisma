@@ -11,306 +11,162 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id                String   @id @default(cuid())
-  email             String   @unique
-  name              String
-  phone             String?
-  cpf               String?  @unique
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
-  // Relacionamentos
-  minister          Minister?
-  orders            Order[]
-  courseEnrollments CourseEnrollment[]
-  
-  @@map("users")
-}
-
-model Minister {
-  id                String            @id @default(cuid())
-  userId            String            @unique
-  ministerNumber    String            @unique
-  churchName        String
-  churchCnpj        String?
-  churchAddress     String
-  churchCity        String
-  churchState       String
-  churchZipCode     String
-  ordinationDate    DateTime
-  denomination      String
-  status            MinisterStatus    @default(PENDING)
-  associationDate   DateTime?
-  expirationDate    DateTime?
-  digitalCard       String?           // URL para carteira digital
-  documents         MinisterDocument[]
-  
-  // Relacionamentos
-  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  createdAt         DateTime          @default(now())
-  updatedAt         DateTime          @updatedAt
-  
-  @@map("ministers")
-}
-
-model MinisterDocument {
-  id          String   @id @default(cuid())
-  ministerId  String
-  type        String   // "rg", "cpf", "ordination_certificate", etc.
-  fileName    String
-  fileUrl     String
-  verified    Boolean  @default(false)
-  
-  minister    Minister @relation(fields: [ministerId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@map("minister_documents")
-}
-
+// Core tables that exist in Supabase
 model Course {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  instructor  String
-  duration    Int      // em horas
-  price       Decimal
-  category    String
-  level       CourseLevel
-  thumbnail   String?
-  videoUrl    String?
-  materials   String[] // URLs de materiais
-  status      CourseStatus @default(DRAFT)
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title         String
+  description   String?
+  duration_hours Int?
+  level         String?
+  price         Decimal? @db.Decimal
+  thumbnail_url String?
+  is_published  Boolean? @default(false)
+  created_at    DateTime @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime @default(now()) @db.Timestamptz(6)
   
-  // Relacionamentos
-  enrollments CourseEnrollment[]
-  lessons     Lesson[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Relationships
+  modules       Module[]
   
   @@map("courses")
 }
 
-model Lesson {
-  id          String   @id @default(cuid())
-  courseId    String
+model Module {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  course_id   String   @db.Uuid
   title       String
   description String?
-  videoUrl    String
-  duration    Int      // em minutos
-  order       Int
+  order_index Int
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @default(now()) @db.Timestamptz(6)
   
-  // Relacionamentos
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  progress    LessonProgress[]
+  // Relationships
+  course      Course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  @@map("modules")
+}
+
+model Lesson {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  module_id        String   @db.Uuid
+  title            String
+  description      String?
+  content          String?
+  video_url        String?
+  duration_minutes Int?
+  order_index      Int
+  is_published     Boolean? @default(false)
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime @default(now()) @db.Timestamptz(6)
+  
+  // Relationships
+  module           Module   @relation(fields: [module_id], references: [id], onDelete: Cascade)
   
   @@map("lessons")
 }
 
-model CourseEnrollment {
-  id          String   @id @default(cuid())
-  userId      String
-  courseId    String
-  progress    Int      @default(0) // porcentagem de 0 a 100
-  completed   Boolean  @default(false)
-  completedAt DateTime?
-  certificate String?  // URL do certificado
+model Profile {
+  id         String   @id @db.Uuid
+  email      String?
+  name       String?
+  avatar_url String?
+  provider   String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
   
-  // Relacionamentos
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@unique([userId, courseId])
-  @@map("course_enrollments")
+  @@map("profiles")
 }
 
-model LessonProgress {
-  id        String  @id @default(cuid())
-  userId    String
-  lessonId  String
-  completed Boolean @default(false)
-  watchTime Int     @default(0) // tempo assistido em segundos
+model Note {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  title      String
+  content    String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+  updated_at DateTime @default(now()) @db.Timestamptz(6)
   
-  // Relacionamentos
-  lesson    Lesson  @relation(fields: [lessonId], references: [id], onDelete: Cascade)
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
-  @@unique([userId, lessonId])
-  @@map("lesson_progress")
+  @@map("notes")
 }
 
-model Product {
-  id          String      @id @default(cuid())
-  name        String
-  description String
-  price       Decimal
-  category    ProductCategory
-  type        ProductType
-  sku         String      @unique
-  stock       Int         @default(0)
-  images      String[]    // URLs das imagens
-  fileUrl     String?     // Para produtos digitais
-  status      ProductStatus @default(ACTIVE)
-  featured    Boolean     @default(false)
+// Medical system tables (existing in database)
+model Paciente {
+  id               String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nome             String
+  email            String?
+  telefone         String
+  cpf              String
+  endereco         String?
+  data_nascimento  DateTime? @db.Date
+  observacoes      String?
+  created_at       DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime? @default(now()) @db.Timestamptz(6)
   
-  // Relacionamentos
-  orderItems  OrderItem[]
-  
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  
-  @@map("products")
+  @@map("pacientes")
 }
 
-model Order {
-  id          String      @id @default(cuid())
-  userId      String
-  orderNumber String      @unique
-  status      OrderStatus @default(PENDING)
-  total       Decimal
-  subtotal    Decimal
-  tax         Decimal     @default(0)
-  shipping    Decimal     @default(0)
+model Profissional {
+  id                    String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nome                  String
+  especialidade         String
+  email                 String?
+  telefone              String?
+  registro_profissional String?
+  status                String?   @default("ativo")
+  horario_inicio        DateTime? @default(dbgenerated("'08:00:00'::time without time zone")) @db.Time(6)
+  horario_fim           DateTime? @default(dbgenerated("'18:00:00'::time without time zone")) @db.Time(6)
+  created_at            DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime? @default(now()) @db.Timestamptz(6)
   
-  // Endereço de entrega
-  shippingName    String?
-  shippingAddress String?
-  shippingCity    String?
-  shippingState   String?
-  shippingZipCode String?
+  // Relationships
+  servicos              ProfissionalServico[]
   
-  // Pagamento
-  paymentMethod   PaymentMethod
-  paymentStatus   PaymentStatus @default(PENDING)
-  pixKey          String?
-  pixQrCode       String?
+  @@map("profissionais")
+}
+
+model Servico {
+  id          String    @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  nome        String
+  descricao   String?
+  duracao     Int
+  preco       Decimal?  @db.Decimal
+  status      String?   @default("ativo")
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
   
-  // Relacionamentos
-  user        User        @relation(fields: [userId], references: [id])
-  items       OrderItem[]
+  // Relationships
+  profissionais ProfissionalServico[]
   
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  @@map("servicos")
+}
+
+model ProfissionalServico {
+  profissional_id String @db.Uuid
+  servico_id      String @db.Uuid
   
-  @@map("orders")
-}
-
-model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  productId String
-  quantity  Int
-  price     Decimal
+  // Relationships
+  profissional    Profissional @relation(fields: [profissional_id], references: [id])
+  servico         Servico      @relation(fields: [servico_id], references: [id])
   
-  // Relacionamentos
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id])
+  @@id([profissional_id, servico_id])
+  @@map("profissionais_servicos")
+}
+
+model Task {
+  id          BigInt   @id @default(autoincrement())
+  description String   @db.VarChar
+  status      Boolean
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
   
-  @@map("order_items")
+  @@map("tasks")
 }
 
-model Newsletter {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+model MessageBuffer {
+  id         BigInt   @id @default(autoincrement())
+  content    String
+  timestamp  Int?
+  chatid     String?
+  idMessage  String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
   
-  @@map("newsletter")
-}
-
-model Event {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  date        DateTime
-  location    String?
-  online      Boolean  @default(false)
-  price       Decimal  @default(0)
-  maxParticipants Int?
-  registrationDeadline DateTime?
-  image       String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  @@map("events")
-}
-
-// Enums
-enum MinisterStatus {
-  PENDING
-  ACTIVE
-  SUSPENDED
-  EXPIRED
-  CANCELLED
-}
-
-enum CourseLevel {
-  BEGINNER
-  INTERMEDIATE
-  ADVANCED
-}
-
-enum CourseStatus {
-  DRAFT
-  PUBLISHED
-  ARCHIVED
-}
-
-enum ProductCategory {
-  BOOK
-  EBOOK
-  AUDIOBOOK
-  COURSE
-  MATERIAL
-  GIFT
-  CLOTHING
-  ACCESSORY
-}
-
-enum ProductType {
-  PHYSICAL
-  DIGITAL
-}
-
-enum ProductStatus {
-  ACTIVE
-  INACTIVE
-  OUT_OF_STOCK
-}
-
-enum OrderStatus {
-  PENDING
-  CONFIRMED
-  PROCESSING
-  SHIPPED
-  DELIVERED
-  CANCELLED
-  REFUNDED
-}
-
-enum PaymentMethod {
-  PIX
-  CREDIT_CARD
-  DEBIT_CARD
-  BANK_TRANSFER
-}
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  FAILED
-  REFUNDED
+  @@map("message_buffer")
 }
