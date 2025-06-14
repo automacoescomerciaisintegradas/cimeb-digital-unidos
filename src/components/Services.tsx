@@ -1,4 +1,3 @@
-
 import { Button } from '@/components/ui/button';
 
 const Services = () => {
@@ -45,8 +44,8 @@ const Services = () => {
   ];
 
   return (
-    <section className="py-20 bg-white">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-20 bg-textured relative">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
             Nossos Serviços

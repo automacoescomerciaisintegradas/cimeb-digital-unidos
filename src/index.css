@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -100,4 +101,28 @@
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom textured background class */
+.bg-textured {
+  background-color: #ffffff;
+  background-image: url('/placeholder.svg');
+  background-size: 120px 120px;
+  background-repeat: repeat;
+  background-position: 0 0;
+  opacity: 0.98;
+}
+
+.bg-textured::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url('/placeholder.svg');
+  background-size: 120px 120px;
+  background-repeat: repeat;
+  opacity: 0.03;
+  pointer-events: none;
 }
