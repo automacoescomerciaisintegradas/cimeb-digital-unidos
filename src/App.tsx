@@ -10,7 +10,14 @@ import AcademyAuth from "./pages/AcademyAuth";
 import AcademyDashboard from "./pages/AcademyDashboard";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -23,7 +30,6 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/academy/auth" element={<AcademyAuth />} />
             <Route path="/academy" element={<AcademyDashboard />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
