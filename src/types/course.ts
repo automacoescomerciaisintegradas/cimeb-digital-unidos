@@ -10,6 +10,19 @@ export interface Course {
   is_published: boolean | null;
   created_at: string;
   updated_at: string;
+  instructor_name: string | null;
+  instructor_bio: string | null;
+  instructor_avatar_url: string | null;
+}
+
+export interface ModuleWithLessons extends Module {
+  lessons: Lesson[];
+}
+
+export interface CourseDetail extends Course {
+  modules: ModuleWithLessons[];
+  // Instructor info is now part of Course, but if we had a separate Instructor object, it would be:
+  // instructor: Instructor | null;
 }
 
 export interface Module {

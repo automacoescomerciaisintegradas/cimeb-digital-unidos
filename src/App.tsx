@@ -8,6 +8,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import Index from "./pages/Index";
 import AcademyAuth from "./pages/AcademyAuth";
 import AcademyDashboard from "./pages/AcademyDashboard";
+import AcademyCourseDetailPage from "./pages/AcademyCourseDetailPage"; // Added import
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/academy/auth" element={<AcademyAuth />} />
             <Route path="/academy" element={<AcademyDashboard />} />
+            <Route path="/academy/courses/:courseId" element={<AcademyCourseDetailPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

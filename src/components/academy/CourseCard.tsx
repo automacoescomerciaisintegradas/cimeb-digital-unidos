@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Play } from 'lucide-react';
 import { Course } from '@/types/course';
+import { Link } from 'react-router-dom';
 
 interface CourseCardProps {
   course: Course;
@@ -28,9 +29,11 @@ export const CourseCard = ({ course }: CourseCardProps) => {
           <span className="text-sm text-gray-500">
             {course.duration_hours || 0}h de conteúdo
           </span>
-          <Button size="sm">
-            <Play className="w-4 h-4 mr-2" />
-            Ver Curso
+          <Button size="sm" asChild>
+            <Link to={`/academy/courses/${course.id}`}>
+              <Play className="w-4 h-4 mr-2" />
+              Ver Curso
+            </Link>
           </Button>
         </div>
       </CardContent>
