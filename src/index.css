@@ -104,13 +104,13 @@
 }
 
 /* Custom textured background class */
-.bg-textured {
-  background-color: #ffffff;
-  background-image: url('/placeholder.svg');
-  background-size: 120px 120px;
-  background-repeat: repeat;
-  background-position: 0 0;
-  opacity: 0.98;
+a[href*="lovable.dev"], iframe[src*="lovable.dev"], div[style*="Edit with Lovable"], .lovable-badge {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  position: absolute !important;
+  z-index: -9999 !important;
 }
 
 .bg-textured::before {
